@@ -1,6 +1,7 @@
 import pygame
 from enum import Enum
 import random
+from numpy import rot90
 from random import randint
 
 DEBUG = False
@@ -8,7 +9,7 @@ DEBUG = False
 WIDTH = 300
 HEIGHT = 450
 FPS = 60
-GAMEHARDER = 60
+GAMEHARDER = 20
 
 CELLCOUNTX = 10
 CELLCOUNTY = 20
@@ -57,63 +58,87 @@ class Figure:
     blocks = []
     color = (0, 0, 255)
     turn = Turn.Up
+    x = 4
+    y = 0
     def __init__(self, inType):
         self.type = inType
-        self.blocks = [[0, 0], [0, 0], [0, 0], [0, 0]]
+        self.blocks = []
         if(self.type == 'i'):
-            self.blocks[0][0] = 4
-            self.blocks[1][0] = 5
-            self.blocks[2][0] = 6
-            self.blocks[3][0] = 7
+            for x in range(0,4):
+                self.blocks.append([])
+                for y in range(0, 1):
+                    self.blocks[x].append(Block())
+            self.blocks[0][0].existence = True
+            self.blocks[1][0].existence = True
+            self.blocks[2][0].existence = True
+            self.blocks[3][0].existence = True
             self.color = BLUE
-        if(self.type == 't'):
-            self.blocks[0][0] = 4
-            self.blocks[1][0] = 5
-            self.blocks[2][0] = 6
-            self.blocks[3][0] = 5
-            self.blocks[3][1] = 1
-            self.color = PURPLE
+
         if(self.type == 'j'):
-            self.blocks[0][0] = 4
-            self.blocks[1][0] = 5
-            self.blocks[2][0] = 6
-            self.blocks[3][0] = 4
-            self.blocks[3][1] = 1
+            for x in range(0,3):
+                self.blocks.append([])
+                for y in range(0, 2):
+                    self.blocks[x].append(Block())
+            self.blocks[0][0].existence = True
+            self.blocks[1][0].existence = True
+            self.blocks[2][0].existence = True
+            self.blocks[2][1].existence = True
             self.color = (33, 200, 243)
+
         if(self.type == 'l'):
-            self.blocks[0][0] = 4
-            self.blocks[1][0] = 5
-            self.blocks[2][0] = 6
-            self.blocks[3][0] = 6
-            self.blocks[3][1] = 1
+            for x in range(0,3):
+                self.blocks.append([])
+                for y in range(0, 2):
+                    self.blocks[x].append(Block())
+            self.blocks[0][0].existence = True
+            self.blocks[1][0].existence = True
+            self.blocks[2][0].existence = True
+            self.blocks[0][1].existence = True
             self.color = ORANGE
+
         if(self.type == 'o'):
-            self.blocks[0][0] = 5
-            self.blocks[1][0] = 5
-            self.blocks[2][0] = 6
-            self.blocks[3][0] = 6
-            self.blocks[3][1] = 1
-            self.blocks[0][1] = 1
+            for x in range(0,2):
+                self.blocks.append([])
+                for y in range(0, 2):
+                    self.blocks[x].append(Block())
+                    self.blocks[x][y].existence = True
             self.color = YELLOW
+
         if(self.type == 's'):
-            self.blocks[0][0] = 7
-            self.blocks[1][0] = 5
-            self.blocks[2][0] = 6
-            self.blocks[3][0] = 6
-            self.blocks[3][1] = 1
-            self.blocks[0][1] = 1
+            for x in range(0,3):
+                self.blocks.append([])
+                for y in range(0, 2):
+                    self.blocks[x].append(Block())
+            self.blocks[0][0].existence = True
+            self.blocks[1][0].existence = True
+            self.blocks[1][1].existence = True
+            self.blocks[2][1].existence = True
             self.color = GREEN
+
         if(self.type == 'z'):
-            self.blocks[0][0] = 5
-            self.blocks[1][0] = 5
-            self.blocks[2][0] = 6
-            self.blocks[3][0] = 4
-            self.blocks[3][1] = 1
-            self.blocks[0][1] = 1
+            for x in range(0,3):
+                self.blocks.append([])
+                for y in range(0, 2):
+                    self.blocks[x].append(Block())
+            self.blocks[0][1].existence = True
+            self.blocks[1][0].existence = True
+            self.blocks[1][1].existence = True
+            self.blocks[2][0].existence = True
             self.color = RED
 
+        if(self.type == 't'):
+            for x in range(0,3):
+                self.blocks.append([])
+                for y in range(0, 2):
+                    self.blocks[x].append(Block())
+            self.blocks[0][0].existence = True
+            self.blocks[1][0].existence = True
+            self.blocks[1][1].existence = True
+            self.blocks[2][0].existence = True
+            self.color = PURPLE
+
 class Fild:
-    figure = Figure('z')
+    figure = Figure('l')
     realFild = [[]]
     result = 0
     def __init__(self):
@@ -154,956 +179,92 @@ class Fild:
     def newFigure(self):
         self.figure = Figure(TypeFigure[randint(1, 7)])
         flag = False
-        for n in self.figure.blocks:
-            if (self.realFild[n[0]][n[1]].existence):
-                flag = True
+        for x in range(0, len(self.figure.blocks)):
+            for y in range(0, len(self.figure.blocks[x])):
+                if (self.realFild[self.figure.x + x][self.figure.y + y].existence and self.figure.blocks[x][y].existence):
+                    flag = True
         if(flag):
             self.reset()
 
+    def testCollision(self,typeMove):
+        xIn = 0
+        yIn = 0
+        if(typeMove ==  MoveType.Down):
+            xIn = 0
+            yIn = 1
+        if(typeMove ==  MoveType.Right):
+            xIn = 1
+            yIn = 0
+        if (typeMove == MoveType.Left):
+            xIn = -1
+            yIn = 0
+        if (typeMove == MoveType.Nothing):
+            xIn = 0
+            yIn = 0
+        flag = True
+        if (self.figure.y + len(self.figure.blocks[0]) + yIn - 1 > 19):
+            return False
+        if (self.figure.x + xIn < 0):
+            return False
+        if(self.figure.x + len(self.figure.blocks) + xIn - 1 > 9):
+            return False
+        if (flag):
+            for x in range(0, len(self.figure.blocks)):
+                for y in range(0, len(self.figure.blocks[x])):
+                    if (self.realFild[self.figure.x + x + xIn][self.figure.y + y + yIn].existence and self.figure.blocks[x][y].existence):
+                        return False
+        return flag
+
     def step(self,typeMove = MoveType.Down):
-        try:
+        #try:
             if(typeMove == MoveType.Down):
-                flag = True
-                for n in self.figure.blocks:
-                    if(n[1] == 19):
-                        flag = False
-                    elif(self.realFild[n[0]][n[1] + 1].existence):
-                        flag = False
-                if(flag):
-                    self.figure.blocks[0][1] += 1
-                    self.figure.blocks[1][1] += 1
-                    self.figure.blocks[2][1] += 1
-                    self.figure.blocks[3][1] += 1
+                if(self.testCollision(typeMove)):
+                    self.figure.y += 1
                 else:
-                    self.realFild[self.figure.blocks[0][0]][self.figure.blocks[0][1]].existence = True
-                    self.realFild[self.figure.blocks[1][0]][self.figure.blocks[1][1]].existence = True
-                    self.realFild[self.figure.blocks[2][0]][self.figure.blocks[2][1]].existence = True
-                    self.realFild[self.figure.blocks[3][0]][self.figure.blocks[3][1]].existence = True
-                    if DEBUG == False:
-                        self.realFild[self.figure.blocks[0][0]][self.figure.blocks[0][1]].color = self.figure.color
-                        self.realFild[self.figure.blocks[1][0]][self.figure.blocks[1][1]].color = self.figure.color
-                        self.realFild[self.figure.blocks[2][0]][self.figure.blocks[2][1]].color = self.figure.color
-                        self.realFild[self.figure.blocks[3][0]][self.figure.blocks[3][1]].color = self.figure.color
+                    for x in range(0, len(self.figure.blocks)):
+                        for y in range(0, len(self.figure.blocks[x])):
+                            if(self.figure.blocks[x][y].existence):
+                                self.realFild[self.figure.x + x][self.figure.y + y].existence = self.figure.blocks[x][y].existence
+                                self.realFild[self.figure.x + x][self.figure.y + y].color = self.figure.color
                     self.newFigure()
                     self.testLine()
+
             if (typeMove == MoveType.Left):
-                flag = True
-                for n in self.figure.blocks:
-                    if (n[0] == 0):
-                        flag = False
-                    elif (self.realFild[n[0] - 1][n[1]].existence):
-                        flag = False
-                if (flag):
-                    self.figure.blocks[0][0] -= 1
-                    self.figure.blocks[1][0] -= 1
-                    self.figure.blocks[2][0] -= 1
-                    self.figure.blocks[3][0] -= 1
+                if(self.testCollision(typeMove)):
+                    self.figure.x -= 1
+
             if (typeMove == MoveType.Right):
-                flag = True
-                for n in self.figure.blocks:
-                    if (n[0] == 9):
-                        flag = False
-                    elif (self.realFild[n[0] + 1][n[1]].existence):
-                        flag = False
-                if (flag):
-                    self.figure.blocks[0][0] += 1
-                    self.figure.blocks[1][0] += 1
-                    self.figure.blocks[2][0] += 1
-                    self.figure.blocks[3][0] += 1
+                if (self.testCollision(typeMove)):
+                    self.figure.x += 1
+
             if (typeMove == MoveType.Сlockwise):
-                if(self.figure.type == 'i'):
-                    if(self.figure.turn == Turn.Up):
-                        flag = True
-                        if(False):
-                            flag = False
-                        elif(self.realFild[self.figure.blocks[0][0] + 2][self.figure.blocks[0][1] - 2].existence):
-                            flag = False
-                        elif(self.realFild[self.figure.blocks[1][0] + 1][self.figure.blocks[1][1] - 1].existence):
-                            flag = False
-                        elif(self.realFild[self.figure.blocks[3][0] - 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        if(flag):
-                            self.figure.blocks[0][0] += 2
-                            self.figure.blocks[0][1] -= 2
-                            self.figure.blocks[1][0] += 1
-                            self.figure.blocks[1][1] -= 1
-                            self.figure.blocks[3][0] -= 1
-                            self.figure.blocks[3][1] += 1
-                            self.figure.turn = Turn.Right
-                    elif(self.figure.turn == Turn.Right):
-                        flag = True
-                        if(False):
-                            flag = False
-                        elif(self.realFild[self.figure.blocks[0][0] + 2][self.figure.blocks[0][1] + 2].existence):
-                            flag = False
-                        elif(self.realFild[self.figure.blocks[1][0] + 1][self.figure.blocks[1][1] + 1].existence):
-                            flag = False
-                        elif(self.realFild[self.figure.blocks[3][0] - 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        if(flag):
-                            self.figure.blocks[0][0] += 2
-                            self.figure.blocks[0][1] += 2
-                            self.figure.blocks[1][0] += 1
-                            self.figure.blocks[1][1] += 1
-                            self.figure.blocks[3][0] -= 1
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Down
-                    elif(self.figure.turn == Turn.Down):
-                        flag = True
-                        if(False):
-                            flag = False
-                        elif(self.realFild[self.figure.blocks[0][0] - 2][self.figure.blocks[0][1] + 2].existence):
-                            flag = False
-                        elif(self.realFild[self.figure.blocks[1][0] - 1][self.figure.blocks[1][1] + 1].existence):
-                            flag = False
-                        elif(self.realFild[self.figure.blocks[3][0] + 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        if(flag):
-                            self.figure.blocks[0][0] -= 2
-                            self.figure.blocks[0][1] += 2
-                            self.figure.blocks[1][0] -= 1
-                            self.figure.blocks[1][1] += 1
-                            self.figure.blocks[3][0] += 1
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Left
-                    elif(self.figure.turn == Turn.Left):
-                        flag = True
-                        if(False):
-                            flag = False
-                        elif(self.realFild[self.figure.blocks[0][0] - 2][self.figure.blocks[0][1] - 2].existence):
-                            flag = False
-                        elif(self.realFild[self.figure.blocks[1][0] - 1][self.figure.blocks[1][1] - 1].existence):
-                            flag = False
-                        elif(self.realFild[self.figure.blocks[3][0] + 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        if(flag):
-                            self.figure.blocks[0][0] -= 2
-                            self.figure.blocks[0][1] -= 2
-                            self.figure.blocks[1][0] -= 1
-                            self.figure.blocks[1][1] -= 1
-                            self.figure.blocks[3][0] += 1
-                            self.figure.blocks[3][1] += 1
-                            self.figure.turn = Turn.Up
-                elif (self.figure.type == 'l'):
-                    if (self.figure.turn == Turn.Up):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 1][self.figure.blocks[2][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 2][self.figure.blocks[3][1] + 0].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 1
-                            self.figure.blocks[0][1] -= 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] -= 1
-                            self.figure.blocks[2][1] += 1
-                            self.figure.blocks[3][0] -= 2
-                            self.figure.blocks[3][1] += 0
-                            self.figure.turn = Turn.Right
-                    elif (self.figure.turn == Turn.Right):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 1][self.figure.blocks[2][1] - 2].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 0][self.figure.blocks[3][1] - 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 1
-                            self.figure.blocks[0][1] += 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] -= 1
-                            self.figure.blocks[2][1] -= 2
-                            self.figure.blocks[3][0] -= 0
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Down
-                    elif (self.figure.turn == Turn.Down):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 1][self.figure.blocks[2][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 2][self.figure.blocks[3][1] - 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 1
-                            self.figure.blocks[0][1] += 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] += 1
-                            self.figure.blocks[2][1] -= 0
-                            self.figure.blocks[3][0] += 2
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Left
-                    elif (self.figure.turn == Turn.Left):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 1][self.figure.blocks[2][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 0][self.figure.blocks[3][1] + 2].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 1
-                            self.figure.blocks[0][1] -= 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] += 1
-                            self.figure.blocks[2][1] += 1
-                            self.figure.blocks[3][0] += 0
-                            self.figure.blocks[3][1] += 2
-                            self.figure.turn = Turn.Up
-                elif (self.figure.type == 'j'):
-                    if (self.figure.turn == Turn.Up):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 1][self.figure.blocks[2][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 0][self.figure.blocks[3][1] - 2].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 1
-                            self.figure.blocks[0][1] -= 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] -= 1
-                            self.figure.blocks[2][1] += 1
-                            self.figure.blocks[3][0] -= 0
-                            self.figure.blocks[3][1] -= 2
-                            self.figure.turn = Turn.Right
-                    elif (self.figure.turn == Turn.Right):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 1][self.figure.blocks[2][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 2][self.figure.blocks[3][1] - 0].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 1
-                            self.figure.blocks[0][1] += 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] -= 1
-                            self.figure.blocks[2][1] -= 1
-                            self.figure.blocks[3][0] += 2
-                            self.figure.blocks[3][1] -= 0
-                            self.figure.turn = Turn.Down
-                    elif (self.figure.turn == Turn.Down):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 1][self.figure.blocks[2][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 0][self.figure.blocks[3][1] + 2].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 1
-                            self.figure.blocks[0][1] += 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] += 1
-                            self.figure.blocks[2][1] -= 1
-                            self.figure.blocks[3][0] += 0
-                            self.figure.blocks[3][1] += 2
-                            self.figure.turn = Turn.Left
-                    elif (self.figure.turn == Turn.Left):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 1][self.figure.blocks[2][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 2][self.figure.blocks[3][1] + 0].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 1
-                            self.figure.blocks[0][1] -= 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] += 1
-                            self.figure.blocks[2][1] += 1
-                            self.figure.blocks[3][0] -= 2
-                            self.figure.blocks[3][1] += 0
-                            self.figure.turn = Turn.Up
-                elif (self.figure.type == 't'):
-                    if (self.figure.turn == Turn.Up):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 1][self.figure.blocks[2][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 1][self.figure.blocks[3][1] - 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 1
-                            self.figure.blocks[0][1] -= 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] -= 1
-                            self.figure.blocks[2][1] += 1
-                            self.figure.blocks[3][0] -= 1
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Right
-                    elif (self.figure.turn == Turn.Right):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 1][self.figure.blocks[2][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 1][self.figure.blocks[3][1] - 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 1
-                            self.figure.blocks[0][1] += 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] -= 1
-                            self.figure.blocks[2][1] -= 1
-                            self.figure.blocks[3][0] += 1
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Down
-                    elif (self.figure.turn == Turn.Down):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][1] + 1][self.figure.blocks[2][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 1][self.figure.blocks[3][1] + 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 1
-                            self.figure.blocks[0][1] += 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] += 1
-                            self.figure.blocks[2][1] -= 1
-                            self.figure.blocks[3][0] += 1
-                            self.figure.blocks[3][1] += 1
-                            self.figure.turn = Turn.Left
-                    elif (self.figure.turn == Turn.Left):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 1][self.figure.blocks[2][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 1][self.figure.blocks[3][1] + 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 1
-                            self.figure.blocks[0][1] -= 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] += 1
-                            self.figure.blocks[2][1] += 1
-                            self.figure.blocks[3][0] -= 1
-                            self.figure.blocks[3][1] += 1
-                            self.figure.turn = Turn.Up
-                elif (self.figure.type == 's'):
-                    if (self.figure.turn == Turn.Up):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 0][self.figure.blocks[0][1] - 2].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 1][self.figure.blocks[1][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 0][self.figure.blocks[2][1] + 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 1][self.figure.blocks[3][1] - 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 0
-                            self.figure.blocks[0][1] -= 2
-                            self.figure.blocks[1][0] += 1
-                            self.figure.blocks[1][1] += 1
-                            self.figure.blocks[2][0] -= 0
-                            self.figure.blocks[2][1] += 0
-                            self.figure.blocks[3][0] += 1
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Down
-                    elif (self.figure.turn == Turn.Down):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 0][self.figure.blocks[0][1] + 2].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] - 1][self.figure.blocks[1][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 0][self.figure.blocks[2][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 1][self.figure.blocks[3][1] + 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 0
-                            self.figure.blocks[0][1] += 2
-                            self.figure.blocks[1][0] -= 1
-                            self.figure.blocks[1][1] -= 1
-                            self.figure.blocks[2][0] -= 0
-                            self.figure.blocks[2][1] += 0
-                            self.figure.blocks[3][0] -= 1
-                            self.figure.blocks[3][1] += 1
-                            self.figure.turn = Turn.Up
-                elif (self.figure.type == 'z'):
-                    if (self.figure.turn == Turn.Up):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 0][self.figure.blocks[0][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] - 1][self.figure.blocks[1][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 2][self.figure.blocks[2][1] + 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 1][self.figure.blocks[3][1] + 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 0
-                            self.figure.blocks[0][1] -= 0
-                            self.figure.blocks[1][0] -= 1
-                            self.figure.blocks[1][1] += 1
-                            self.figure.blocks[2][0] -= 2
-                            self.figure.blocks[2][1] += 0
-                            self.figure.blocks[3][0] += 1
-                            self.figure.blocks[3][1] += 1
-                            self.figure.turn = Turn.Down
+                backUp = self.figure.blocks
+                self.figure.blocks = rot90(self.figure.blocks, 1)
+                if(self.testCollision(MoveType.Nothing) == False):
+                    self.figure.blocks = backUp
 
-                    elif (self.figure.turn == Turn.Down):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 0][self.figure.blocks[0][1] + 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 1][self.figure.blocks[1][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 2][self.figure.blocks[2][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 1][self.figure.blocks[3][1] - 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 0
-                            self.figure.blocks[0][1] -= 0
-                            self.figure.blocks[1][0] += 1
-                            self.figure.blocks[1][1] -= 1
-                            self.figure.blocks[2][0] += 2
-                            self.figure.blocks[2][1] -= 0
-                            self.figure.blocks[3][0] -= 1
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Up
             if (typeMove == MoveType.Сounterclockwise):
-                if(self.figure.type == 'i'):
-                    if (self.figure.turn == Turn.Up):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 2][self.figure.blocks[0][1] + 2].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 1][self.figure.blocks[1][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 2
-                            self.figure.blocks[0][1] += 2
-                            self.figure.blocks[1][0] += 1
-                            self.figure.blocks[1][1] += 1
-                            self.figure.blocks[3][0] -= 1
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Left
-                    elif (self.figure.turn == Turn.Right):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 2][self.figure.blocks[0][1] + 2].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] - 1][self.figure.blocks[1][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 2
-                            self.figure.blocks[0][1] += 2
-                            self.figure.blocks[1][0] -= 1
-                            self.figure.blocks[1][1] += 1
-                            self.figure.blocks[3][0] += 1
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Up
-                    elif (self.figure.turn == Turn.Down):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 2][self.figure.blocks[0][1] - 2].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] - 1][self.figure.blocks[1][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 2
-                            self.figure.blocks[0][1] -= 2
-                            self.figure.blocks[1][0] -= 1
-                            self.figure.blocks[1][1] -= 1
-                            self.figure.blocks[3][0] += 1
-                            self.figure.blocks[3][1] += 1
-                            self.figure.turn = Turn.Right
-                    elif (self.figure.turn == Turn.Left):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 2][self.figure.blocks[0][1] - 2].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 1][self.figure.blocks[1][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 2
-                            self.figure.blocks[0][1] -= 2
-                            self.figure.blocks[1][0] += 1
-                            self.figure.blocks[1][1] -= 1
-                            self.figure.blocks[3][0] -= 1
-                            self.figure.blocks[3][1] += 1
-                            self.figure.turn = Turn.Down
-                elif (self.figure.type == 'l'):
-                    if (self.figure.turn == Turn.Up):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 1][self.figure.blocks[2][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 0][self.figure.blocks[3][1] - 2].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 1
-                            self.figure.blocks[0][1] += 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] -= 1
-                            self.figure.blocks[2][1] -= 1
-                            self.figure.blocks[3][0] -= 0
-                            self.figure.blocks[3][1] -= 2
-                            self.figure.turn = Turn.Left
-                    elif (self.figure.turn == Turn.Left):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 1][self.figure.blocks[2][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 2][self.figure.blocks[3][1] - 0].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 1
-                            self.figure.blocks[0][1] -= 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] -= 1
-                            self.figure.blocks[2][1] += 1
-                            self.figure.blocks[3][0] -= 2
-                            self.figure.blocks[3][1] -= 0
-                            self.figure.turn = Turn.Down
-                    elif (self.figure.turn == Turn.Down):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 1][self.figure.blocks[2][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 0][self.figure.blocks[3][1] + 2].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 1
-                            self.figure.blocks[0][1] -= 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] += 1
-                            self.figure.blocks[2][1] += 1
-                            self.figure.blocks[3][0] += 0
-                            self.figure.blocks[3][1] += 2
-                            self.figure.turn = Turn.Right
-                    elif (self.figure.turn == Turn.Right):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 1][self.figure.blocks[2][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 2][self.figure.blocks[3][1] + 0].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 1
-                            self.figure.blocks[0][1] += 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] += 1
-                            self.figure.blocks[2][1] -= 1
-                            self.figure.blocks[3][0] += 2
-                            self.figure.blocks[3][1] += 0
-                            self.figure.turn = Turn.Up
-                elif (self.figure.type == 'j'):
-                    if (self.figure.turn == Turn.Up):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 1][self.figure.blocks[2][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 2][self.figure.blocks[3][1] + 0].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 1
-                            self.figure.blocks[0][1] += 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] -= 1
-                            self.figure.blocks[2][1] -= 1
-                            self.figure.blocks[3][0] += 2
-                            self.figure.blocks[3][1] -= 0
-                            self.figure.turn = Turn.Left
-                    elif (self.figure.turn == Turn.Left):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 1][self.figure.blocks[2][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 0][self.figure.blocks[3][1] - 2].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 1
-                            self.figure.blocks[0][1] -= 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] -= 1
-                            self.figure.blocks[2][1] += 1
-                            self.figure.blocks[3][0] -= 0
-                            self.figure.blocks[3][1] -= 2
-                            self.figure.turn = Turn.Down
-                    elif (self.figure.turn == Turn.Down):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 1][self.figure.blocks[2][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 2][self.figure.blocks[3][1] + 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 1
-                            self.figure.blocks[0][1] -= 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] += 1
-                            self.figure.blocks[2][1] += 1
-                            self.figure.blocks[3][0] -= 2
-                            self.figure.blocks[3][1] += 0
-                            self.figure.turn = Turn.Right
-                    elif (self.figure.turn == Turn.Right):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 1][self.figure.blocks[2][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 0][self.figure.blocks[3][1] + 2].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 1
-                            self.figure.blocks[0][1] += 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] += 1
-                            self.figure.blocks[2][1] -= 1
-                            self.figure.blocks[3][0] += 0
-                            self.figure.blocks[3][1] += 2
-                            self.figure.turn = Turn.Up
-                elif (self.figure.type == 't'):
-                    if (self.figure.turn == Turn.Up):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 1][self.figure.blocks[2][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 1][self.figure.blocks[3][1] - 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 1
-                            self.figure.blocks[0][1] += 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] -= 1
-                            self.figure.blocks[2][1] -= 1
-                            self.figure.blocks[3][0] += 1
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Left
-                    elif (self.figure.turn == Turn.Left):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 1][self.figure.blocks[2][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 1][self.figure.blocks[3][1] - 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 1
-                            self.figure.blocks[0][1] -= 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] -= 1
-                            self.figure.blocks[2][1] += 1
-                            self.figure.blocks[3][0] -= 1
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Down
-                    elif (self.figure.turn == Turn.Down):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 1][self.figure.blocks[0][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 1][self.figure.blocks[2][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 1][self.figure.blocks[3][1] + 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 1
-                            self.figure.blocks[0][1] -= 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] += 1
-                            self.figure.blocks[2][1] += 1
-                            self.figure.blocks[3][0] -= 1
-                            self.figure.blocks[3][1] += 1
-                            self.figure.turn = Turn.Right
-                    elif (self.figure.turn == Turn.Right):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 1][self.figure.blocks[0][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 0][self.figure.blocks[1][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 1][self.figure.blocks[2][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 1][self.figure.blocks[3][1] + 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] -= 1
-                            self.figure.blocks[0][1] += 1
-                            self.figure.blocks[1][0] += 0
-                            self.figure.blocks[1][1] -= 0
-                            self.figure.blocks[2][0] += 1
-                            self.figure.blocks[2][1] -= 1
-                            self.figure.blocks[3][0] += 1
-                            self.figure.blocks[3][1] += 1
-                            self.figure.turn = Turn.Up
-                elif (self.figure.type == 's'):
-                    if (self.figure.turn == Turn.Up):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 0][self.figure.blocks[0][1] - 2].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 1][self.figure.blocks[1][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 0][self.figure.blocks[2][1] + 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 1][self.figure.blocks[3][1] - 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 0
-                            self.figure.blocks[0][1] -= 2
-                            self.figure.blocks[1][0] += 1
-                            self.figure.blocks[1][1] += 1
-                            self.figure.blocks[2][0] -= 0
-                            self.figure.blocks[2][1] += 0
-                            self.figure.blocks[3][0] += 1
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Down
-                    elif (self.figure.turn == Turn.Down):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 0][self.figure.blocks[0][1] + 2].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] - 1][self.figure.blocks[1][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 0][self.figure.blocks[2][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 1][self.figure.blocks[3][1] + 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 0
-                            self.figure.blocks[0][1] += 2
-                            self.figure.blocks[1][0] -= 1
-                            self.figure.blocks[1][1] -= 1
-                            self.figure.blocks[2][0] -= 0
-                            self.figure.blocks[2][1] += 0
-                            self.figure.blocks[3][0] -= 1
-                            self.figure.blocks[3][1] += 1
-                            self.figure.turn = Turn.Up
-                elif (self.figure.type == 'z'):
-                    if (self.figure.turn == Turn.Up):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] + 0][self.figure.blocks[0][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] - 1][self.figure.blocks[1][1] + 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] - 2][self.figure.blocks[2][1] + 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] + 1][self.figure.blocks[3][1] + 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 0
-                            self.figure.blocks[0][1] -= 0
-                            self.figure.blocks[1][0] -= 1
-                            self.figure.blocks[1][1] += 1
-                            self.figure.blocks[2][0] -= 2
-                            self.figure.blocks[2][1] += 0
-                            self.figure.blocks[3][0] += 1
-                            self.figure.blocks[3][1] += 1
-                            self.figure.turn = Turn.Down
+                backUp = self.figure.blocks
+                self.figure.blocks = rot90(self.figure.blocks, -1)
+                if (self.testCollision(MoveType.Nothing) == False):
+                    self.figure.blocks = backUp
 
-                    elif (self.figure.turn == Turn.Down):
-                        flag = True
-                        if (False):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[0][0] - 0][self.figure.blocks[0][1] + 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[1][0] + 1][self.figure.blocks[1][1] - 1].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[2][0] + 2][self.figure.blocks[2][1] - 0].existence):
-                            flag = False
-                        elif (self.realFild[self.figure.blocks[3][0] - 1][self.figure.blocks[3][1] - 1].existence):
-                            flag = False
-                        if (flag):
-                            self.figure.blocks[0][0] += 0
-                            self.figure.blocks[0][1] -= 0
-                            self.figure.blocks[1][0] += 1
-                            self.figure.blocks[1][1] -= 1
-                            self.figure.blocks[2][0] += 2
-                            self.figure.blocks[2][1] -= 0
-                            self.figure.blocks[3][0] -= 1
-                            self.figure.blocks[3][1] -= 1
-                            self.figure.turn = Turn.Up
             if (typeMove == MoveType.Fast):
-                stayFlag = True
-                while stayFlag:
-                    flag = True
-                    for n in self.figure.blocks:
-                        if(n[1] == 19):
-                            flag = False
-                        elif(self.realFild[n[0]][n[1] + 1].existence):
-                            flag = False
-                    if(flag):
-                        self.figure.blocks[0][1] += 1
-                        self.figure.blocks[1][1] += 1
-                        self.figure.blocks[2][1] += 1
-                        self.figure.blocks[3][1] += 1
+                while(True):
+                    if (self.testCollision(MoveType.Down)):
+                        self.figure.y += 1
                     else:
-                        self.realFild[self.figure.blocks[0][0]][self.figure.blocks[0][1]].existence = True
-                        self.realFild[self.figure.blocks[1][0]][self.figure.blocks[1][1]].existence = True
-                        self.realFild[self.figure.blocks[2][0]][self.figure.blocks[2][1]].existence = True
-                        self.realFild[self.figure.blocks[3][0]][self.figure.blocks[3][1]].existence = True
-                        if DEBUG == False:
-                            self.realFild[self.figure.blocks[0][0]][self.figure.blocks[0][1]].color = self.figure.color
-                            self.realFild[self.figure.blocks[1][0]][self.figure.blocks[1][1]].color = self.figure.color
-                            self.realFild[self.figure.blocks[2][0]][self.figure.blocks[2][1]].color = self.figure.color
-                            self.realFild[self.figure.blocks[3][0]][self.figure.blocks[3][1]].color = self.figure.color
+                        for x in range(0, len(self.figure.blocks)):
+                            for y in range(0, len(self.figure.blocks[x])):
+                                if (self.figure.blocks[x][y].existence):
+                                    self.realFild[self.figure.x + x][self.figure.y + y].existence = self.figure.blocks[x][y].existence
+                                    self.realFild[self.figure.x + x][self.figure.y + y].color = self.figure.color
                         self.newFigure()
                         self.testLine()
-                        stayFlag = False
+                        break
 
-        except:
-            print("mass error")
+        #except:
+            #print("mass error")
 
 
 
@@ -1112,8 +273,11 @@ def drawFild(fild):
         for y in range(0, 20):
             if(fild.realFild[x][y].existence):
                 pygame.draw.rect(screen, fild.realFild[x][y].color, (10 + x * CELLSIZEXPX, 10 + y * CELLSIZEXPY, CELLSIZEXPX - 2, CELLSIZEXPY - 2))
-    for n in fild.figure.blocks:
-        pygame.draw.rect(screen, fild.figure.color, (10 + n[0] * CELLSIZEXPX, 10 + n[1] * CELLSIZEXPY, CELLSIZEXPX - 2, CELLSIZEXPY - 2))
+
+    for x in range(0, len(fild.figure.blocks)):
+        for y in range(0, len(fild.figure.blocks[x])):
+            if(fild.figure.blocks[x][y].existence):
+                pygame.draw.rect(screen, fild.figure.color, (10 + (fild.figure.x + x) * CELLSIZEXPX, 10 + (fild.figure.y + y) * CELLSIZEXPY, CELLSIZEXPX - 2, CELLSIZEXPY - 2))
 
 def drawDevice(screen):
     screen.fill(BLACK)
